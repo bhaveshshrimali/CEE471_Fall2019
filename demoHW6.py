@@ -113,23 +113,9 @@ for idx_p, p in enumerate(pressure_inside):
     z_at_B_soln = solve_bvp_balloon(parameters, p)
     xs, zs = integrate_ode_sys(z_at_B_soln, integrator, parameters)
     zs = np.array(zs)
-    if idx_p==0:
-        Xvals.append(xs)
-    
+    Xvals.append(xs)
     fvals.append(zs[:,0])
     fpvals.append(zs[:,1])
-
-
-fvals = np.array(fvals)
-fpvals = np.array(fpvals)
-
-
-
-rb = B*fvals[:,0]
-fig, ax = plt.subplots(1,1,figsize=(8,8))
-ax.plot(pressure_inside, rb)
-
-
     # fvals.append(zs[0])
     
 
