@@ -16,6 +16,7 @@ alph = 2.5
 # kapp=Symbol('kappa')
 # alph = Symbol('alpha')
 lam1, lam2, lam3 = Symbol('lambda_1'), Symbol('lambda_2'), Symbol('lambda_3')
+lam = Symbol('lambda')
 R = Symbol('R')
 f = Function('f', real=True)
 fp = Function('fp', real=True)
@@ -23,12 +24,16 @@ Jdet = lam1*lam2*lam3
 
 # define the stored energy function in terms of the eigen-stretches
 W = mu/alph*(lam1**alph + lam2**alph + lam3**alph ) - mu*log(Jdet) + kapp/2*(Jdet - 1)**2
+W_asym = simplify(W.subs([(lam1,lam**(-2)), (lam2, lam), (lam3, lam)]))
 
 # compute the symbolic derivatives: 
     # useful in calculation of the eigen stresses
 dW_dl1 = lambdify((lam1, lam2, lam3), simplify(W.diff(lam1)), 'numpy')
 dW_dl2 = lambdify((lam1, lam2, lam3), simplify(W.diff(lam2)), 'numpy')
 dW_dl3 = lambdify((lam1, lam2, lam3), simplify(W.diff(lam3)), 'numpy')
+
+# and for the asymptotic solution
+dW_asymp_dl = lambdify(lam, simplify(W_asym.diff(lam)), 'numpy')
 
 # t1 = dW_dl1(R*fp+f, f, f)
 # t2 = dW_dl2(R*fp+f, f, f)
@@ -97,7 +102,7 @@ def solve_bvp_balloon(params, pvals, step=1.e-3, silent=True):
     soln = least_squares(residual_at_A, z_at_B_guess, loss='soft_l1')
     return soln.x 
 
-pressure_inside = np.linspace(0,0.09,101)
+pressure_inside = np.linspace(0,0.09*10**6,101)
 A, B = 0.95, 1.
 parameters = [mu, kapp, alph, A, B]
 integrator = ode(ode_sys).set_integrator('vode', rtol=1.e-8, method='bdf')
@@ -108,10 +113,23 @@ for idx_p, p in enumerate(pressure_inside):
     z_at_B_soln = solve_bvp_balloon(parameters, p)
     xs, zs = integrate_ode_sys(z_at_B_soln, integrator, parameters)
     zs = np.array(zs)
-    Xvals.append(xs)
+    if idx_p==0:
+        Xvals.append(xs)
+    
     fvals.append(zs[:,0])
     fpvals.append(zs[:,1])
-    
+
+
+fvals = np.array(fvals)
+fpvals = np.array(fpvals)
+
+
+
+rb = B*fvals[:,0]
+fig, ax = plt.subplots(1,1,figsize=(8,8))
+ax.plot(pressure_inside, rb)
+
+
     # fvals.append(zs[0])
     
 
