@@ -47,11 +47,11 @@ t1_func = lambdify((lam1, lam2, lam3), simplify(1./(lam2*lam3)*W.diff(lam1)),'nu
 
 # Calculate the second derivative f''(R), which will be helpful later on to impose BC and 
 # solve the resulting 1st-order system
-fpp = simplify(solve(t1.diff(R)-2/R*(t1-t2),fp(R).diff(R))[0])
+fpp = simplify(solve(t1.diff(R)+2/R*(t1-t2),fp(R).diff(R))[0])
 fpp = simplify(fpp.subs(f(R).diff(R), fp(R)))
 print(fpp)   # simplest way is to copy-paste this in the function below
 
-def ode_sys(R, z, params):
+def ode_sys(r, z, params):
     """
     Returns a system of two first order ODEs from the given second order
     ODE. Let's call the state variable as z = [f, f']
@@ -61,22 +61,22 @@ def ode_sys(R, z, params):
     """
     mu, kappa, alpha, A, B = params
     f_r, fp_r = z
-    fpp_r = (-2.0*R**4*kappa*f_r**4*fp_r**4 - 8.0*R**3*kappa*f_r**5*fp_r**3 - 10.0*R**2*kappa*f_r**6*fp_r**2 + 2.0*R**2*mu*(R*fp_r + f_r)**alpha*fp_r**2 - 2.0*R**2*mu*fp_r**2 - 2*R*alpha*mu*(R*fp_r + f_r)**alpha*f_r*fp_r - 4.0*R*kappa*f_r**7*fp_r + 6.0*R*mu*(R*fp_r + f_r)**alpha*f_r*fp_r - 4.0*R*mu*f_r*fp_r - 2.0*R*mu*f_r**(alpha + 1)*fp_r + 2.0*mu*(R*fp_r + f_r)**alpha*f_r**2 - 2.0*mu*f_r**(alpha + 2))/(R**2*(R**2*kappa*f_r**4*fp_r**2 + 2.0*R*kappa*f_r**5*fp_r + alpha*mu*(R*fp_r + f_r)**alpha + kappa*f_r**6 - mu*(R*fp_r + f_r)**alpha + mu)*f_r)
+    fpp_r = (-2.0*r**4*kappa*f_r**4*fp_r**3*fp_r - r**3*kappa*f_r**5*fp_r**3 - 7.0*r**3*kappa*f_r**5*fp_r**2*fp_r - 2.0*r**2*kappa*f_r**6*fp_r**2 - 8.0*r**2*kappa*f_r**6*fp_r*fp_r + 2.0*r**2*mu*(r*fp_r + f_r)**alpha*fp_r*fp_r - 2.0*r**2*mu*fp_r*fp_r - r*alpha*mu*(r*fp_r + f_r)**alpha*f_r*fp_r - r*alpha*mu*(r*fp_r + f_r)**alpha*f_r*fp_r - r*kappa*f_r**7*fp_r - 3.0*r*kappa*f_r**7*fp_r - r*mu*(r*fp_r + f_r)**alpha*f_r*fp_r + 3.0*r*mu*(r*fp_r + f_r)**alpha*f_r*fp_r - r*mu*f_r*fp_r - 3.0*r*mu*f_r*fp_r + 2.0*r*mu*f_r**(alpha + 1)*fp_r - 2.0*mu*(r*fp_r + f_r)**alpha*f_r**2 + 2.0*mu*f_r**(alpha + 2))/(r**2*(r**2*kappa*f_r**4*fp_r**2 + 2.0*r*kappa*f_r**5*fp_r + alpha*mu*(r*fp_r + f_r)**alpha + kappa*f_r**6 - mu*(r*fp_r + f_r)**alpha + mu)*f_r)
     return [fp_r, fpp_r]
 
-def integrate_ode_sys(z_at_B, integrator, params, step=1.e-3, silent=True):
+def integrate_ode_sys(z_at_A, integrator, params, step=1.e-3, silent=True):
     """
     Calls an ODE integrator to integrate the initial value problem over the 
     shell thickness; starting from the outer surface
     """
-    mu, kapp, alph, A, B = params
-    initial_condition = z_at_B
-    integrator.set_initial_value(initial_condition, t=B)
+    _, _, _, A, B = params
+    initial_condition = z_at_A
+    integrator.set_initial_value(initial_condition, t=A)
     integrator.set_f_params(params)
-    dt =step
+    dt = step
     xs, zs = [], []
-    while integrator.successful() and integrator.t >= A:
-        integrator.integrate(integrator.t - dt)
+    while integrator.successful() and integrator.t < B:
+        integrator.integrate(integrator.t + dt)
         xs.append(integrator.t)
         zs.append([integrator.y[0], integrator.y[1]])
         if not silent:
@@ -90,15 +90,17 @@ def solve_bvp_balloon(params, pvals, step=1.e-3, silent=True):
     returns the correct value of z = [f, f'] at R = B
     """
     integrator = ode(ode_sys).set_integrator('vode', rtol=1.e-8, method='bdf')
-    mu, kapp, alph, A, B = params
+    _, _, _, A, B = params
     # xs, zs = [], []
-    def residual_at_A(z_at_B):
-        xz, zs = integrate_ode_sys(z_at_B, integrator, params)
-        f_A, fp_A = np.array(zs)[-1]
+    def residual_at_A(z_at_A):
+        xs, zs = integrate_ode_sys(z_at_A, integrator, params)
+        f_A, fp_A = np.array(zs)[0]
+        f_B, fp_B = np.array(zs)[-1]
         bc_inside = pvals + t1_func(A*fp_A, f_A, f_A)
-        return bc_inside
+        bc_outside = t1_func(B*fp_B, f_B, f_B)
+        return [bc_inside, bc_outside]
     
-    z_at_B_guess = np.array([1+pvals**(1./4), 1./(1. + pvals**(1./4))])
+    z_at_A_guess = np.array([1+pvals**(1./4), 1./(1. + pvals**(1./4))])
     soln = least_squares(residual_at_A, z_at_B_guess, loss='soft_l1')
     return soln.x 
 
