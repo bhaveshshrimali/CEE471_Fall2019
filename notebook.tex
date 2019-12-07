@@ -10,11 +10,11 @@
 
 
     
-\documentclass[11pt]{article}
+\documentclass[3p]{article}
 
     
     
-    \usepackage[T1]{fontenc}
+    %\usepackage[T1]{fontenc}
     % Nicer default font (+ math font) than Computer Modern for most use cases
     \usepackage{mathpazo}
 
@@ -96,7 +96,7 @@
     % extracted from the output of `pandoc -s`
     \providecommand{\tightlist}{%
       \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},fontsize=\footnotesize}
     % Add ',fontsize=\small' for more characters per line
     \newenvironment{Shaded}{}{}
     \newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
@@ -141,7 +141,7 @@
     \def\gt{>}
     \def\lt{<}
     % Document parameters
-    \title{demoHW7}
+    \title{HW9\_Calculations}
     
     
     
@@ -268,7 +268,7 @@
       }
     % Slightly bigger margins than the latex defaults
     
-    \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+    \geometry{verbose,tmargin=0.7in,bmargin=0.7in,lmargin=0.7in,rmargin=0.7in}
     
     
 
@@ -280,116 +280,310 @@
     
 
     
+    \hypertarget{hw9-finite-elements-rayleigh-ritz-and-stability}{%
+\section{HW9: Finite Elements (Rayleigh-Ritz) and
+Stability}\label{hw9-finite-elements-rayleigh-ritz-and-stability}}
+
     \begin{Verbatim}[commandchars=\\\{\}]
 {\color{incolor}In [{\color{incolor}1}]:} \PY{k+kn}{from} \PY{n+nn}{sympy} \PY{k}{import} \PY{o}{*}
+        \PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+        \PY{k+kn}{import} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{pyplot} \PY{k}{as} \PY{n+nn}{plt}
+        \PY{k+kn}{from} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{ticker} \PY{k}{import} \PY{n}{AutoMinorLocator}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rc}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{text}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{usetex}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
         \PY{n}{init\PYZus{}printing}\PY{p}{(}\PY{p}{)}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ytick.right}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{True}\PY{l+s+s1}{\PYZsq{}}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ytick.direction}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{in}\PY{l+s+s1}{\PYZsq{}}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ytick.labelsize}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+m+mi}{26}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{xtick.labelsize}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+m+mi}{26}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{xtick.minor.visible}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{k+kc}{True}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ytick.minor.visible}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{k+kc}{True}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{xtick.major.size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+m+mi}{8}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{xtick.minor.size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+m+mi}{4}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ytick.major.size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+m+mi}{8}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ytick.minor.size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{l+m+mi}{4}
+        \PY{n}{plt}\PY{o}{.}\PY{n}{rcParams}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{lines.markersize}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{n}{np}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{l+m+mi}{36}\PY{p}{)}
 \end{Verbatim}
 
 
-    \hypertarget{problem-2}{%
-\paragraph{Problem 2}\label{problem-2}}
+    \hypertarget{initialize-the-degrees-of-freedom}{%
+\subsection{Initialize the degrees of
+freedom}\label{initialize-the-degrees-of-freedom}}
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}2}]:} \PY{n}{X1} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{X\PYZus{}1}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-        \PY{n}{X2} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{X\PYZus{}2}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-        \PY{n}{a} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-        \PY{n}{phi} \PY{o}{=} \PY{l+m+mi}{1}\PY{o}{/}\PY{p}{(}\PY{l+m+mi}{6}\PY{o}{*}\PY{n}{a}\PY{p}{)}\PY{o}{*}\PY{p}{(}\PY{l+m+mi}{3}\PY{o}{*}\PY{n}{X1}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}\PY{o}{*}\PY{n}{X2} \PY{o}{\PYZhy{}} \PY{n}{X2}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{3}\PY{p}{)}
+{\color{incolor}In [{\color{incolor}2}]:} \PY{n}{alph} \PY{o}{=} \PY{n}{zeros}\PY{p}{(}\PY{l+m+mi}{6}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{alph}\PY{p}{)}\PY{p}{)}\PY{p}{:}
+            \PY{n}{alph}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{alpha\PYZus{}}\PY{l+s+si}{\PYZob{}\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 \end{Verbatim}
 
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}3}]:} \PY{n}{psi\PYZus{}1} \PY{o}{=} \PY{n}{integrate}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{n}{simplify}\PY{p}{(}\PY{n}{phi}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{X2}\PY{p}{)}\PY{p}{)}\PY{p}{,}\PY{n}{X1}\PY{p}{)}
+{\color{incolor}In [{\color{incolor}3}]:} \PY{n}{alph}
 \end{Verbatim}
 
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}4}]:} \PY{n}{psi\PYZus{}1}
-\end{Verbatim}
-
-\texttt{\color{outcolor}Out[{\color{outcolor}4}]:}
+\texttt{\color{outcolor}Out[{\color{outcolor}3}]:}
     
-    $$- \frac{X_{1}^{3}}{6 a} + \frac{X_{1} X_{2}^{2}}{2 a}$$
-
-    
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}5}]:} \PY{n}{psi\PYZus{}2} \PY{o}{=} \PY{n}{integrate}\PY{p}{(}\PY{n}{simplify}\PY{p}{(}\PY{n}{phi}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{X1}\PY{p}{)}\PY{p}{)}\PY{p}{,}\PY{n}{X2}\PY{p}{)}
-\end{Verbatim}
-
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}6}]:} \PY{n}{psi\PYZus{}2}
-\end{Verbatim}
-
-\texttt{\color{outcolor}Out[{\color{outcolor}6}]:}
-    
-    $$\frac{X_{1} X_{2}^{2}}{2 a}$$
+    $$\left[\begin{matrix}\alpha_{1}\\\alpha_{2}\\\alpha_{3}\\\alpha_{4}\\\alpha_{5}\\\alpha_{6}\end{matrix}\right]$$
 
     
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}7}]:} \PY{n}{K} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{K}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-        \PY{n}{psi} \PY{o}{=} \PY{n}{psi\PYZus{}2} \PY{o}{\PYZhy{}} \PY{n}{X1}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{3}\PY{o}{/}\PY{p}{(}\PY{l+m+mi}{6}\PY{o}{*}\PY{n}{a}\PY{p}{)} \PY{o}{+} \PY{n}{K}
+{\color{incolor}In [{\color{incolor}4}]:} \PY{n}{x} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{x}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        \PY{n}{y} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{y}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        
+        \PY{n}{a1} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a\PYZus{}1}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        \PY{n}{a2} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a\PYZus{}2}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        \PY{n}{a3} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a\PYZus{}3}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        
+        \PY{n}{l} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{l}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        \PY{n}{w} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{w}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        \PY{n}{h} \PY{o}{=} \PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{h}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{real}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+        
+        \PY{n}{N1\PYZus{}1} \PY{o}{=} \PY{n}{a1} \PY{o}{+} \PY{n}{a2}\PY{o}{*}\PY{n}{x} \PY{o}{+} \PY{n}{a3} \PY{o}{*}\PY{n}{y} \PY{c+c1}{\PYZsh{}shape function for node 1 subscript (elem: no.)}
+        \PY{n}{N3\PYZus{}1} \PY{o}{=} \PY{n}{a1} \PY{o}{+} \PY{n}{a2}\PY{o}{*}\PY{n}{x} \PY{o}{+} \PY{n}{a3} \PY{o}{*}\PY{n}{y}
+        \PY{n}{N1\PYZus{}2} \PY{o}{=} \PY{n}{a1} \PY{o}{+} \PY{n}{a2}\PY{o}{*}\PY{n}{x} \PY{o}{+} \PY{n}{a3} \PY{o}{*}\PY{n}{y}
+        \PY{n}{N1\PYZus{}3} \PY{o}{=} \PY{n}{a1} \PY{o}{+} \PY{n}{a2}\PY{o}{*}\PY{n}{x} \PY{o}{+} \PY{n}{a3} \PY{o}{*}\PY{n}{y}
+        \PY{n}{N3\PYZus{}3} \PY{o}{=} \PY{n}{a1} \PY{o}{+} \PY{n}{a2}\PY{o}{*}\PY{n}{x} \PY{o}{+} \PY{n}{a3} \PY{o}{*}\PY{n}{y}
+\end{Verbatim}
+
+
+    \hypertarget{determine-the-shape-functions}{%
+\subsection{Determine the shape
+functions}\label{determine-the-shape-functions}}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}5}]:} \PY{c+c1}{\PYZsh{} Triangle 1}
+        \PY{n}{sys1\PYZus{}1} \PY{o}{=} \PY{n}{solve\PYZus{}linear\PYZus{}system}\PY{p}{(}\PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{n}{w}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{]}\PY{p}{)}\PY{p}{,}\PY{n}{a1}\PY{p}{,}\PY{n}{a2}\PY{p}{,}\PY{n}{a3}\PY{p}{)}
+        \PY{n}{sys2\PYZus{}1} \PY{o}{=} \PY{n}{solve\PYZus{}linear\PYZus{}system}\PY{p}{(}\PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{n}{w}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{]}\PY{p}{)}\PY{p}{,}\PY{n}{a1}\PY{p}{,}\PY{n}{a2}\PY{p}{,}\PY{n}{a3}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Triangle 2}
+        \PY{n}{sys1\PYZus{}2} \PY{o}{=} \PY{n}{solve\PYZus{}linear\PYZus{}system}\PY{p}{(}\PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{n}{w}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{w}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{]}\PY{p}{)}\PY{p}{,}\PY{n}{a1}\PY{p}{,}\PY{n}{a2}\PY{p}{,}\PY{n}{a3}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Triangle 3}
+        \PY{n}{sys1\PYZus{}3} \PY{o}{=} \PY{n}{solve\PYZus{}linear\PYZus{}system}\PY{p}{(}\PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{n}{w}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{n}{w}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{w}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{]}\PY{p}{)}\PY{p}{,}\PY{n}{a1}\PY{p}{,}\PY{n}{a2}\PY{p}{,}\PY{n}{a3}\PY{p}{)}
+        \PY{n}{sys2\PYZus{}3} \PY{o}{=} \PY{n}{solve\PYZus{}linear\PYZus{}system}\PY{p}{(}\PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{n}{w}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{1.}\PY{p}{,}\PY{n}{w}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{w}\PY{p}{,}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{]}\PY{p}{)}\PY{p}{,}\PY{n}{a1}\PY{p}{,}\PY{n}{a2}\PY{p}{,}\PY{n}{a3}\PY{p}{)}
 \end{Verbatim}
 
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}8}]:} \PY{n}{chi} \PY{o}{=} \PY{n}{simplify}\PY{p}{(}\PY{n}{psi} \PY{o}{\PYZhy{}} \PY{l+m+mi}{1}\PY{o}{/}\PY{l+m+mi}{2}\PY{o}{*}\PY{p}{(}\PY{n}{X1}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2} \PY{o}{+} \PY{n}{X2}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{)} \PY{c+c1}{\PYZsh{}definition of chi ()}
+{\color{incolor}In [{\color{incolor}6}]:} \PY{c+c1}{\PYZsh{} Triangle 1}
+        \PY{n}{N1\PYZus{}1} \PY{o}{=} \PY{n}{N1\PYZus{}1}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{sys1\PYZus{}1}\PY{p}{)}
+        \PY{n}{N3\PYZus{}1} \PY{o}{=} \PY{n}{N3\PYZus{}1}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{sys2\PYZus{}1}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Triangle 2}
+        \PY{n}{N1\PYZus{}2} \PY{o}{=} \PY{n}{N1\PYZus{}2}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{sys1\PYZus{}2}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Triangle 3}
+        \PY{n}{N1\PYZus{}3} \PY{o}{=} \PY{n}{N1\PYZus{}3}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{sys1\PYZus{}3}\PY{p}{)}
+        \PY{n}{N3\PYZus{}3} \PY{o}{=} \PY{n}{N3\PYZus{}3}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{sys2\PYZus{}3}\PY{p}{)}
 \end{Verbatim}
 
+
+    \hypertarget{look-for-the-displacement-field-u-and-v}{%
+\subsubsection{\texorpdfstring{Look for the displacement field \(u\) and
+\(v\)}{Look for the displacement field u and v}}\label{look-for-the-displacement-field-u-and-v}}
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}9}]:} \PY{n}{nsimplify}\PY{p}{(}\PY{n}{chi}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{X1}\PY{p}{,}\PY{n}{a}\PY{p}{)}\PY{p}{,}\PY{n}{rational}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+{\color{incolor}In [{\color{incolor}21}]:} \PY{n}{N3\PYZus{}1}
 \end{Verbatim}
 
-\texttt{\color{outcolor}Out[{\color{outcolor}9}]:}
+\texttt{\color{outcolor}Out[{\color{outcolor}21}]:}
     
-    $$K - \frac{2 a^{2}}{3}$$
+    $$\frac{2.0 x}{w}$$
 
     
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}10}]:} \PY{n}{Ksol} \PY{o}{=} \PY{n}{solve}\PY{p}{(}\PY{n}{chi}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{X1}\PY{p}{,}\PY{n}{a}\PY{p}{)}\PY{p}{,}\PY{n}{K}\PY{p}{)}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+{\color{incolor}In [{\color{incolor}8}]:} \PY{c+c1}{\PYZsh{} Triangle 1}
+        \PY{n}{u1\PYZus{}1} \PY{o}{=} \PY{n}{N1\PYZus{}1}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]} \PY{o}{+} \PY{n}{N3\PYZus{}1}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}
+        \PY{n}{v1\PYZus{}1} \PY{o}{=} \PY{n}{N1\PYZus{}1}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{+} \PY{n}{N3\PYZus{}1}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} Triangle 2}
+        \PY{n}{u1\PYZus{}2} \PY{o}{=} \PY{n}{N1\PYZus{}2}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}
+        \PY{n}{v1\PYZus{}2} \PY{o}{=} \PY{n}{N1\PYZus{}2}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} Triangle 3}
+        \PY{n}{u1\PYZus{}3} \PY{o}{=} \PY{n}{N1\PYZus{}3}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]} \PY{o}{+} \PY{n}{N3\PYZus{}3}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{2}\PY{p}{]}
+        \PY{n}{v1\PYZus{}3} \PY{o}{=} \PY{n}{N1\PYZus{}3} \PY{o}{*} \PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]} \PY{o}{+} \PY{n}{N3\PYZus{}3}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}
 \end{Verbatim}
 
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}11}]:} \PY{n}{chi} \PY{o}{=} \PY{n}{chi}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{K}\PY{p}{,}\PY{n}{Ksol}\PY{p}{)}
+{\color{incolor}In [{\color{incolor}9}]:} \PY{n}{eps\PYZus{}1} \PY{o}{=} \PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{n}{u1\PYZus{}1}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{p}{(}\PY{n}{u1\PYZus{}1}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)} \PY{o}{+} \PY{n}{v1\PYZus{}1}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)} \PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{p}{(}\PY{n}{u1\PYZus{}1}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)} \PY{o}{+} \PY{n}{v1\PYZus{}1}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)}\PY{p}{,} \PY{n}{v1\PYZus{}1}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)}\PY{p}{]}\PY{p}{]}\PY{p}{)}
+        \PY{n}{eps\PYZus{}2} \PY{o}{=} \PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{n}{u1\PYZus{}2}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{p}{(}\PY{n}{u1\PYZus{}2}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)} \PY{o}{+} \PY{n}{v1\PYZus{}2}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)} \PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{p}{(}\PY{n}{u1\PYZus{}2}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)} \PY{o}{+} \PY{n}{v1\PYZus{}2}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)}\PY{p}{,} \PY{n}{v1\PYZus{}2}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)}\PY{p}{]}\PY{p}{]}\PY{p}{)}
+        \PY{n}{eps\PYZus{}3} \PY{o}{=} \PY{n}{Matrix}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{n}{u1\PYZus{}3}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{p}{(}\PY{n}{u1\PYZus{}3}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)} \PY{o}{+} \PY{n}{v1\PYZus{}3}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)} \PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mf}{0.5}\PY{o}{*}\PY{p}{(}\PY{n}{u1\PYZus{}3}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)} \PY{o}{+} \PY{n}{v1\PYZus{}3}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)}\PY{p}{,} \PY{n}{v1\PYZus{}3}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{y}\PY{p}{)}\PY{p}{]}\PY{p}{]}\PY{p}{)}
+\end{Verbatim}
+
+
+    \hypertarget{material-properties}{%
+\subsubsection{Material properties}\label{material-properties}}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}22}]:} \PY{n}{mu} \PY{o}{=} \PY{l+m+mf}{1.e7}\PY{o}{/}\PY{l+m+mi}{2}
+         \PY{n}{nu} \PY{o}{=} \PY{l+m+mf}{0.}
+         \PY{n}{lmbda} \PY{o}{=} \PY{l+m+mf}{0.}
+         \PY{n}{P} \PY{o}{=} \PY{l+m+mf}{10.}
+         \PY{c+c1}{\PYZsh{} l = w = 1}
+         \PY{c+c1}{\PYZsh{} h = 0.01}
+         
+         \PY{c+c1}{\PYZsh{} A\PYZus{}i are the elemental volumes}
+         \PY{n}{A3} \PY{o}{=} \PY{n}{A1} \PY{o}{=} \PY{l+m+mi}{1}\PY{o}{/}\PY{l+m+mi}{4}\PY{o}{*}\PY{n}{w}\PY{o}{*}\PY{n}{l}\PY{o}{*}\PY{n}{h}
+         \PY{n}{A2} \PY{o}{=} \PY{l+m+mi}{2}\PY{o}{*}\PY{n}{A3}
+         \PY{c+c1}{\PYZsh{} Defining the potential energy}
+         \PY{n}{U} \PY{o}{=} \PY{n}{mu}\PY{o}{*}\PY{n}{trace}\PY{p}{(}\PY{n}{eps\PYZus{}1}\PY{o}{*}\PY{n}{eps\PYZus{}1}\PY{p}{)}\PY{o}{*}\PY{n}{A1} \PY{o}{+} \PY{n}{mu}\PY{o}{*}\PY{n}{trace}\PY{p}{(}\PY{n}{eps\PYZus{}3}\PY{o}{*}\PY{n}{eps\PYZus{}3}\PY{p}{)}\PY{o}{*}\PY{n}{A3} \PY{o}{+} \PY{n}{mu}\PY{o}{*}\PY{n}{trace}\PY{p}{(}\PY{n}{eps\PYZus{}2}\PY{o}{*}\PY{n}{eps\PYZus{}2}\PY{p}{)}\PY{o}{*}\PY{n}{A2} \PY{o}{\PYZhy{}} \PY{n}{P}\PY{o}{*}\PY{n}{alph}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}
 \end{Verbatim}
 
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}12}]:} \PY{n}{nsimplify}\PY{p}{(}\PY{n}{chi}\PY{p}{,}\PY{n}{rational}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+{\color{incolor}In [{\color{incolor}23}]:} \PY{n}{eqns} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{alph}\PY{p}{)}\PY{p}{)}\PY{p}{:}
+             \PY{n}{eqns}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{U}\PY{o}{.}\PY{n}{diff}\PY{p}{(}\PY{n}{alph}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 
-\texttt{\color{outcolor}Out[{\color{outcolor}12}]:}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}24}]:} \PY{n}{eqns}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{subs\PYZus{}list}\PY{p}{)}
+         \PY{n}{eps\PYZus{}1}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{]}
+\end{Verbatim}
+
+\texttt{\color{outcolor}Out[{\color{outcolor}24}]:}
     
-    $$- \frac{X_{1}^{3}}{6 a} - \frac{X_{1}^{2}}{2} + \frac{X_{1} X_{2}^{2}}{2 a} - \frac{X_{2}^{2}}{2} + \frac{2 a^{2}}{3}$$
+    $$- \frac{2.0 \alpha_{1}}{w} + \frac{2.0 \alpha_{3}}{w}$$
 
     
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}13}]:} \PY{c+c1}{\PYZsh{} Calculate integral of chi}
-\end{Verbatim}
-
-
-    \[2\mu \int\limits_{x_1 = -2a}^a\quad \int\limits_{x_2 = \frac{-2a-x_1}{\sqrt{3}}}^{\frac{2a+x_1}{\sqrt{3}}}\ \chi(x_1, x_2)\ dx_2\ dx_1  \]
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}14}]:} \PY{n}{chi\PYZus{}1} \PY{o}{=} \PY{n}{integrate}\PY{p}{(}\PY{n}{chi}\PY{p}{,}\PY{p}{(}\PY{n}{X2}\PY{p}{,}\PY{o}{\PYZhy{}}\PY{l+m+mi}{2}\PY{o}{*}\PY{n}{a}\PY{o}{/}\PY{n}{sqrt}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{)} \PY{o}{\PYZhy{}} \PY{n}{X1}\PY{o}{/}\PY{n}{sqrt}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{)}\PY{p}{,} \PY{l+m+mi}{2}\PY{o}{*}\PY{n}{a}\PY{o}{/}\PY{n}{sqrt}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{)} \PY{o}{+} \PY{n}{X1}\PY{o}{/}\PY{n}{sqrt}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{)}  \PY{p}{)}\PY{p}{)}
+{\color{incolor}In [{\color{incolor}25}]:} \PY{n}{soln} \PY{o}{=} \PY{n}{solve}\PY{p}{(}\PY{n}{eqns}\PY{p}{,}\PY{n}{alph}\PY{p}{)}
 \end{Verbatim}
 
 
     \begin{Verbatim}[commandchars=\\\{\}]
-{\color{incolor}In [{\color{incolor}16}]:} \PY{n}{mu}\PY{o}{=}\PY{n}{Symbol}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mu}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-         \PY{n}{nsimplify}\PY{p}{(}\PY{l+m+mi}{2}\PY{o}{*}\PY{n}{mu}\PY{o}{*}\PY{n}{integrate}\PY{p}{(}\PY{n}{chi\PYZus{}1}\PY{p}{,}\PY{p}{(}\PY{n}{X1}\PY{p}{,}\PY{o}{\PYZhy{}}\PY{l+m+mi}{2}\PY{o}{*}\PY{n}{a}\PY{p}{,}\PY{n}{a}\PY{p}{)}\PY{p}{)}\PY{p}{,}\PY{n}{rational}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+{\color{incolor}In [{\color{incolor}26}]:} \PY{n}{alph\PYZus{}new} \PY{o}{=} \PY{n}{alph}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{soln}\PY{p}{)}
 \end{Verbatim}
 
-\texttt{\color{outcolor}Out[{\color{outcolor}16}]:}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}27}]:} \PY{n}{alph\PYZus{}new}
+\end{Verbatim}
+
+\texttt{\color{outcolor}Out[{\color{outcolor}27}]:}
     
-    $$\frac{9 \sqrt{3} a^{4} \mu}{5}$$
+    $$\left[\begin{matrix}\frac{8.0 \cdot 10^{-6} l^{3} \left(256.0 l^{6} + 192.0 l^{4} w^{2} + 24.0 l^{2} w^{4} - w^{6}\right)}{h w \left(512.0 l^{8} + 640.0 l^{6} w^{2} + 176.0 l^{4} w^{4} + 24.0 l^{2} w^{6} + w^{8}\right)}\\\frac{6.4 \cdot 10^{-5} l^{6} \left(16.0 l^{2} + 5.0 w^{2}\right)}{h \left(512.0 l^{8} + 640.0 l^{6} w^{2} + 176.0 l^{4} w^{4} + 24.0 l^{2} w^{6} + w^{8}\right)}\\\frac{3.2 \cdot 10^{-5} l^{3} \left(2.0 l^{2} + w^{2}\right)}{h w \left(16.0 l^{4} + 16.0 l^{2} w^{2} + w^{4}\right)}\\\frac{4.0 \cdot 10^{-6} l^{2} w^{2}}{h \left(32.0 l^{4} + 8.0 l^{2} w^{2} + w^{4}\right)}\\\frac{8.0 \cdot 10^{-6} l \left(256.0 l^{8} + 256.0 l^{6} w^{2} + 104.0 l^{4} w^{4} + 19.0 l^{2} w^{6} + w^{8}\right)}{h w \left(512.0 l^{8} + 640.0 l^{6} w^{2} + 176.0 l^{4} w^{4} + 24.0 l^{2} w^{6} + w^{8}\right)}\\- \frac{8.0 \cdot 10^{-6} l^{2} \left(128.0 l^{6} + 56.0 l^{4} w^{2} + 16.0 l^{2} w^{4} + w^{6}\right)}{h \left(512.0 l^{8} + 640.0 l^{6} w^{2} + 176.0 l^{4} w^{4} + 24.0 l^{2} w^{6} + w^{8}\right)}\end{matrix}\right]$$
 
     
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}28}]:} \PY{n}{subs\PYZus{}list} \PY{o}{=} \PY{p}{[}\PY{p}{(}\PY{n}{l}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{p}{(}\PY{n}{w}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{p}{(}\PY{n}{h}\PY{p}{,}\PY{l+m+mf}{0.01}\PY{p}{)}\PY{p}{]}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}29}]:} \PY{n}{alph\PYZus{}new} \PY{o}{=} \PY{n}{alph\PYZus{}new}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{subs\PYZus{}list}\PY{p}{)}
+         \PY{n}{alph\PYZus{}new} \PY{o}{*} \PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{6}
+\end{Verbatim}
+
+\texttt{\color{outcolor}Out[{\color{outcolor}29}]:}
+    
+    $$\left[\begin{matrix}278.492239467849\\99.3348115299335\\290.909090909091\\9.75609756097561\\376.053215077605\\-118.847006651885\end{matrix}\right]$$
+
+    
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}30}]:} \PY{k+kn}{import} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{tri} \PY{k}{as} \PY{n+nn}{tri}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}39}]:} \PY{n}{u} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{n}{alph\PYZus{}new}\PY{p}{]}\PY{p}{,}\PY{n+nb}{float}\PY{p}{)}\PY{o}{.}\PY{n}{flatten}\PY{p}{(}\PY{p}{)}
+         \PY{n}{u\PYZus{}def} \PY{o}{=} \PY{n}{u} \PY{o}{*} \PY{l+m+mf}{5.e2}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}40}]:} \PY{n}{xnodes} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{l+m+mf}{0.}\PY{p}{,} \PY{l+m+mf}{1.}\PY{p}{,} \PY{l+m+mf}{1.}\PY{p}{,} \PY{l+m+mf}{0.5}\PY{p}{,} \PY{l+m+mf}{0.}\PY{p}{]}\PY{p}{)}
+         \PY{n}{ynodes} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{l+m+mf}{0.}\PY{p}{,} \PY{l+m+mf}{0.}\PY{p}{,} \PY{l+m+mf}{1.}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}
+         \PY{n}{conn} \PY{o}{=} \PY{p}{[}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{,} \PY{p}{[}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{]}
+         \PY{n}{triangles} \PY{o}{=} \PY{n}{tri}\PY{o}{.}\PY{n}{Triangulation}\PY{p}{(}\PY{n}{xnodes}\PY{p}{,} \PY{n}{ynodes}\PY{p}{,} \PY{n}{triangles} \PY{o}{=} \PY{n}{conn}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}41}]:} \PY{n}{xnodes\PYZus{}def} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{l+m+mf}{0.}\PY{p}{,}\PY{l+m+mf}{1.}\PY{p}{,}\PY{l+m+mi}{1}\PY{o}{+}\PY{n}{u\PYZus{}def}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{,}\PY{l+m+mf}{0.5}\PY{o}{+}\PY{n}{u\PYZus{}def}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{4}\PY{p}{]}\PY{p}{,}\PY{n}{u\PYZus{}def}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{]}\PY{p}{)}
+         \PY{n}{ynodes\PYZus{}def} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{l+m+mf}{0.}\PY{p}{,}\PY{l+m+mf}{0.}\PY{p}{,}\PY{l+m+mi}{1}\PY{o}{+}\PY{n}{u\PYZus{}def}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}\PY{l+m+mi}{1}\PY{o}{+}\PY{n}{u\PYZus{}def}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{,}\PY{l+m+mi}{1}\PY{o}{+}\PY{n}{u\PYZus{}def}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{]}\PY{p}{)}
+         \PY{n}{triangles\PYZus{}def} \PY{o}{=} \PY{n}{tri}\PY{o}{.}\PY{n}{Triangulation}\PY{p}{(}\PY{n}{xnodes\PYZus{}def}\PY{p}{,} \PY{n}{ynodes\PYZus{}def}\PY{p}{,} \PY{n}{triangles} \PY{o}{=} \PY{n}{conn}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}44}]:} \PY{n}{fig}\PY{p}{,}\PY{n}{ax} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{,}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{triplot}\PY{p}{(}\PY{n}{triangles}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{r\PYZhy{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{lw}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{,}\PY{n}{label}\PY{o}{=}\PY{l+s+sa}{r}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZdl{}}\PY{l+s+s1}{\PYZbs{}}\PY{l+s+s1}{Omega\PYZus{}0\PYZdl{}: Undeformed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{triplot}\PY{p}{(}\PY{n}{triangles\PYZus{}def}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{b\PYZhy{}\PYZhy{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{lw}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{,}\PY{n}{label}\PY{o}{=}\PY{l+s+sa}{r}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZdl{}}\PY{l+s+s1}{\PYZbs{}}\PY{l+s+s1}{Omega\PYZdl{}: Deformed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+         \PY{c+c1}{\PYZsh{} ax.grid(which=\PYZsq{}major\PYZsq{})}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{text}\PY{p}{(}\PY{l+m+mf}{0.15}\PY{p}{,}\PY{l+m+mf}{0.65}\PY{p}{,}\PY{l+s+sa}{r}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZdl{}e = 1\PYZdl{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{26}\PY{p}{,}\PY{n}{transform}\PY{o}{=}\PY{n}{ax}\PY{o}{.}\PY{n}{transAxes}\PY{p}{,}\PY{n}{bbox}\PY{o}{=}\PY{n+nb}{dict}\PY{p}{(}\PY{n}{facecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{wheat}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{edgecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{text}\PY{p}{(}\PY{l+m+mf}{0.4}\PY{p}{,}\PY{l+m+mf}{0.55}\PY{p}{,}\PY{l+s+sa}{r}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZdl{}e = 2\PYZdl{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{26}\PY{p}{,}\PY{n}{transform}\PY{o}{=}\PY{n}{ax}\PY{o}{.}\PY{n}{transAxes}\PY{p}{,}\PY{n}{bbox}\PY{o}{=}\PY{n+nb}{dict}\PY{p}{(}\PY{n}{facecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{wheat}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{edgecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{text}\PY{p}{(}\PY{l+m+mf}{0.7}\PY{p}{,}\PY{l+m+mf}{0.6}\PY{p}{,}\PY{l+s+sa}{r}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZdl{}e = 3\PYZdl{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{26}\PY{p}{,}\PY{n}{transform}\PY{o}{=}\PY{n}{ax}\PY{o}{.}\PY{n}{transAxes}\PY{p}{,}\PY{n}{bbox}\PY{o}{=}\PY{n+nb}{dict}\PY{p}{(}\PY{n}{facecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{wheat}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{edgecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{tick\PYZus{}params}\PY{p}{(}\PY{n}{pad}\PY{o}{=}\PY{l+m+mi}{10}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{xaxis}\PY{o}{.}\PY{n}{set\PYZus{}minor\PYZus{}locator}\PY{p}{(}\PY{n}{AutoMinorLocator}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{yaxis}\PY{o}{.}\PY{n}{set\PYZus{}minor\PYZus{}locator}\PY{p}{(}\PY{n}{AutoMinorLocator}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{)}
+         \PY{n}{h}\PY{p}{,}\PY{n}{l} \PY{o}{=} \PY{n}{ax}\PY{o}{.}\PY{n}{get\PYZus{}legend\PYZus{}handles\PYZus{}labels}\PY{p}{(}\PY{p}{)}
+         \PY{n}{ax}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{n}{loc}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{lower center}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{handles} \PY{o}{=} \PY{p}{[}\PY{n}{h}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{h}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{]}\PY{p}{,}\PY{n}{labels} \PY{o}{=} \PY{p}{[}\PY{n}{l}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{l}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{]}\PY{p}{,}\PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{30}\PY{p}{,}\PY{n}{ncol}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{,}\PY{n}{fancybox}\PY{o}{=}\PY{k+kc}{False}\PY{p}{,}\PY{n}{facecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{wheat}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{edgecolor}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{k}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{shadow}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+         \PY{n}{fig}\PY{o}{.}\PY{n}{tight\PYZus{}layout}\PY{p}{(}\PY{p}{)}
+         \PY{n}{fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+sa}{r}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{plotP1.eps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_26_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{n}{alph\PYZus{}subs} \PY{o}{=} \PY{p}{\PYZob{}}\PY{n}{alph}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{:}\PY{n}{alph\PYZus{}new}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{alph}\PY{p}{)}\PY{p}{)}\PY{p}{\PYZcb{}}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{c+c1}{\PYZsh{} Calculate the strains in the elements}
+        
+        \PY{c+c1}{\PYZsh{} Element 1:}
+        \PY{n}{eps1} \PY{o}{=} \PY{n}{eps\PYZus{}1}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{alph\PYZus{}subs}\PY{p}{)}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{subs\PYZus{}list}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Element 2:}
+        \PY{n}{eps2} \PY{o}{=} \PY{n}{eps\PYZus{}2}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{alph\PYZus{}subs}\PY{p}{)}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{subs\PYZus{}list}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Element 3:}
+        \PY{n}{eps3} \PY{o}{=} \PY{n}{eps\PYZus{}3}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{alph\PYZus{}subs}\PY{p}{)}\PY{o}{.}\PY{n}{subs}\PY{p}{(}\PY{n}{subs\PYZus{}list}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{n}{eps1}\PY{o}{*}\PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{6}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{n}{eps2}\PY{o}{*}\PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{6}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{n}{eps3}\PY{o}{*}\PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{6}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{n}{eps1}\PY{o}{*}\PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{7}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{n}{eps2}\PY{o}{*}\PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{7}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{n}{eps3}\PY{o}{*}\PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{7}
+\end{Verbatim}
+
 
 
     % Add a bibliography block to the postdoc
